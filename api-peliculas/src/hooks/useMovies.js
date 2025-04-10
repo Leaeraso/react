@@ -1,13 +1,23 @@
-import responseMovies from '../mocks/with-results.json'
+import { useState, useRef, useMemo, useCallback } from 'react'
+import { searchMovies } from '../services/movies'
 
-export function useMovies() {
-  const movies = responseMovies.Search
-  const mappedMovies = movies?.map((movie) => ({
-    id: movie.imdbID,
-    title: movie.Title,
-    year: movie.Year,
-    image: movie.Poster,
-  }))
+export function useMovies({ search, sort }) {
+  const [movies, setMovies] = useState([])
+  const previousSearch = useRef(search)
 
-  return { movies: mappedMovies }
+  const getMovies = useCallback(async ({ search }) => {
+    if (search === previousSearch.current) return
+
+    previousSearch.current = search
+    const newMovies = await searchMovies({ search })
+    setMovies(newMovies)
+  }, [])
+
+  const sortedMovies = useMemo(() => {
+    return sort
+      ? [...movies].sort((a, b) => a.title.localeCompare(b.title))
+      : movies
+  }, [movies, sort])
+
+  return { movies: sortedMovies, getMovies }
 }
